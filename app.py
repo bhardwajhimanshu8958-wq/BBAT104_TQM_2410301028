@@ -15,6 +15,8 @@ from database.seed import (
     seed_settings,
     seed_defects,
 )
+from tqm.fmea import seed_fmea_if_empty
+from tqm.pdca import seed_pdca_if_empty
 from features.theme import apply_theme, render_theme_sidebar
 
 
@@ -28,6 +30,9 @@ def ensure_database():
         seed_vehicles()
         seed_settings()
         seed_defects()
+    # Seed TQM modules independently (safe to call even if partially seeded)
+    seed_fmea_if_empty()
+    seed_pdca_if_empty()
 
 
 # Initialize database schema and initial data

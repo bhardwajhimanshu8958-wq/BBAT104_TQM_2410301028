@@ -82,7 +82,7 @@ def seed_fmea_if_empty() -> None:
             """INSERT INTO fmea (process_step, failure_mode, effect, cause,
                severity, occurrence, detection, rpn, mitigation, status)
                VALUES (?,?,?,?,?,?,?,?,?,?)""",
-            (ps, fm, eff, cause, s, o, d, rpn, mit, "Resolved"),
+            (ps, fm, eff, cause, s, o, d, rpn, mit, "Mitigated"),
         )
 
 
