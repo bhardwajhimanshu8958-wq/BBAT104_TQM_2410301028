@@ -85,6 +85,7 @@ pages = {
         st.Page("ui_pages/pareto_page.py", title="Pareto 80/20 Analysis", icon="📉"),
         st.Page("ui_pages/fishbone_page.py", title="Ishikawa Fishbone", icon="🐟"),
         st.Page("ui_pages/pdca_page.py", title="PDCA Improvement Cycles", icon="🔄"),
+        st.Page("ui_pages/control_chart_page.py", title="SPC Control Chart", icon="📈"),
     ],
 }
 
