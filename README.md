@@ -144,20 +144,37 @@ BBAT104_TQM_2410301028/
 
 ## TQM Artefacts
 
+The project implements a complete Total Quality Management framework with full bidirectional traceability:
+
 | Artefact | File | Purpose |
 |----------|------|---------|
-| SRS | [docs/SRS.md](docs/SRS.md) | Software Requirements Specification |
-| Architecture | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Mermaid flowchart + layered diagram |
-| CTQ Tree | [docs/CTQ_TREE.md](docs/CTQ_TREE.md) | Need → Driver → CTQ with measurable targets |
-| SIPOC | [docs/SIPOC.md](docs/SIPOC.md) | Suppliers, Inputs, Process, Outputs, Customers |
-| FMEA | [docs/FMEA.md](docs/FMEA.md) | 12 failure modes, RPN = S×O×D, mitigation plan |
-| Error Log | [docs/ERROR_LOG.md](docs/ERROR_LOG.md) | Real defects found during development |
+| **SRS** | [docs/SRS.md](docs/SRS.md) | Software Requirements Specification & Traceability Matrix |
+| **Architecture** | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Mermaid flowchart + 4-tier layered architecture |
+| **CTQ Tree** | [docs/CTQ_TREE.md](docs/CTQ_TREE.md) | Critical-to-Quality Need → Driver → Measurable Target tree |
+| **SIPOC** | [docs/SIPOC.md](docs/SIPOC.md) | Macro process matrix (Suppliers, Inputs, Process, Outputs, Customers) |
+| **FMEA** | [docs/FMEA.md](docs/FMEA.md) | Risk audit (12 failure modes, RPN = S×O×D, mitigation plan) |
+| **PDCA Log** | [docs/PDCA_LOG.md](docs/PDCA_LOG.md) | 3 continuous improvement cycles with before & after metrics |
+| **User Manual** | [docs/USER_MANUAL.md](docs/USER_MANUAL.md) | Complete 14-page operational guide & troubleshooting table |
+| **Defect / Error Log** | [docs/ERROR_LOG.md](docs/ERROR_LOG.md) | Real defects found during development & lessons learned |
+
+### Generated TQM Visualisations
+
+The SQC charts are rendered dynamically using `matplotlib` from live SQLite defect and operational data:
+
+#### 1. Pareto Analysis (80/20 Rule — Vital Few Defect Causes)
+![Pareto Chart](docs/pareto_chart.png)
+
+#### 2. Ishikawa Fishbone (Cause-and-Effect Root Cause Analysis)
+![Fishbone Diagram](docs/fishbone_diagram.png)
+
+#### 3. Statistical Process Control (SPC X-bar Control Chart with 3σ Limits)
+![Control Chart](docs/control_chart.png)
 
 ---
 
 ## Architecture
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full Mermaid flowchart.
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full Mermaid flowchart and detailed component map.
 
 **Layered Overview:**
 ```
@@ -174,10 +191,12 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full Mermaid flowchart.
 
 ---
 
-## Review 2 Progress Notes
+## Review Progress & Milestones
 
-As of Review 2 (Milestone Commits 7 through 21), the baseline parking management operations and the complete Q03 Usability feature set have been successfully implemented and verified:
+### Review 1: Setup, SRS & Foundations (Commits 1–6)
+- Repository setup, initial architecture, CTQ Tree, and Software Requirements Specification (SRS) completed.
 
+### Review 2: Baseline CRUD & Q03 Usability Suite (Commits 7–22)
 - ✅ **Full CRUD Implementation**: Slots and Vehicle inventory operations with foreign key integrity and occupied bay deletion protection.
 - ✅ **Optimized Entry Flow (CTQ 1)**: Automatic bay recommendation based on vehicle type (Cars/Disabled, Bikes, EVs) to minimize entry queue wait time.
 - ✅ **Accurate Billing (CTQ 3)**: Tariff computation adhering strictly to SRS FR-14 with free grace tiers, base charges, and ceiling rounding for subsequent hours.
@@ -189,14 +208,8 @@ As of Review 2 (Milestone Commits 7 through 21), the baseline parking management
   4. **Search & Filtering**: Multi-field query filters with SQLite pushdown and instant filter resets.
   5. **Monthly Calendar**: Interactive revenue heatmap with day-level drill-down audits.
 - ✅ **Excel Reporting**: Formatted `.xlsx` exports for sessions, daily revenue, and vehicle registry with styled headers and auto-column fitting.
-- ✅ **Automated Testing**: 100% passing pytest suite and Streamlit AppTest smoke tests.
 
----
-
-## Review 3 Progress Notes
-
-As of Review 3 (Commits 22 through 31), all six TQM quality control tools have been fully implemented as live interactive Streamlit pages backed by the SQLite database:
-
+### Review 3 & 4: TQM Quality Tools & Continuous Improvement (Commits 23–32)
 - ✅ **SIPOC Diagram** (`docs/SIPOC.md`): Full 8-row macro matrix covering all parking system processes.
 - ✅ **Defect Checksheet** (`tqm/checksheet.py`): Real-time defect logging with module, fishbone category, severity (1–10), and status tracking. Demo rows pre-seeded.
 - ✅ **FMEA Risk Audit** (`tqm/fmea.py`): 12 failure modes covering all system layers. RPN = S × O × D. 3 failure modes had pre-mitigation RPN > 100 (critical threshold). All resolved.
@@ -206,7 +219,10 @@ As of Review 3 (Commits 22 through 31), all six TQM quality control tools have b
 - ✅ **SPC Control Chart** (`tqm/control_chart.py`): X-bar chart with 3σ UCL/LCL. Flags out-of-control days in revenue data. 30-day demo revenue seeder included.
 - ✅ **TQM Summary Report** (`tqm/tqm_report.py`): One-click 6-sheet Excel workbook (CTQ Tree, SIPOC, Defect Log, FMEA, PDCA, Control Chart Data) for final submission.
 
-**All 7 pytest tests pass. Total: 31 commits, linear history.**
+### Review 5 / Final Release: v1.0 Production Readiness (Commits 33–34)
+- ✅ **Complete User Manual** (`docs/USER_MANUAL.md`): Detailed 14-page guide covering all pages, system workflows, and troubleshooting.
+- ✅ **Full Defect & Error Log** (`docs/ERROR_LOG.md`): All bugs, root causes, fixes, and prevention mechanisms cataloged.
+- ✅ **Automated Quality Gates**: 100% test pass rate across `pytest` unit suites and `Streamlit` smoke tests.
 
 ---
 
@@ -226,10 +242,19 @@ As of Review 3 (Commits 22 through 31), all six TQM quality control tools have b
 
 ---
 
-## Running Tests
+## Running Tests & Quality Gates
 
+Run the test suite using pytest:
 ```bash
 pytest -q
 ```
 
-Tests cover: slot CRUD, vehicle CRUD, entry/exit logic, billing calculation, Poka-Yoke validators, TQM module imports and checksheet log.
+Tests cover:
+- Slot CRUD operations and occupied-deletion prevention
+- Vehicle registration and unique plate constraints
+- Automatic slot suggestion and allocation
+- Exit processing and tariff billing mathematics (including grace tier calculation)
+- Poka-Yoke input validators (Indian license plates, phone numbers, state transitions)
+- TQM module imports, checksheet logging, and data integrity
+- Streamlit page smoke tests using `streamlit.testing.v1.AppTest`
+
