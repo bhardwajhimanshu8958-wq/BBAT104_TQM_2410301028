@@ -173,9 +173,38 @@ See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full Mermaid flowchart.
 
 ---
 
+## Review 2 Progress Notes
+
+As of Review 2 (Milestone Commits 7 through 21), the baseline parking management operations and the complete Q03 Usability feature set have been successfully implemented and verified:
+
+- ✅ **Full CRUD Implementation**: Slots and Vehicle inventory operations with foreign key integrity and occupied bay deletion protection.
+- ✅ **Optimized Entry Flow (CTQ 1)**: Automatic bay recommendation based on vehicle type (Cars/Disabled, Bikes, EVs) to minimize entry queue wait time.
+- ✅ **Accurate Billing (CTQ 3)**: Tariff computation adhering strictly to SRS FR-14 with free grace tiers, base charges, and ceiling rounding for subsequent hours.
+- ✅ **Poka-Yoke Mistake-Proofing**: Indian vehicle registration format verification, 10-digit mobile number validation, double entry prevention, and exit timestamp guards.
+- ✅ **Q03 Usability Suite**:
+  1. **Dark Mode**: High-contrast dark styling dynamically applied via CSS variables.
+  2. **Custom Themes**: Five distinct palettes (Ocean, Forest, Sunset, Royal, Slate) with real-time sidebar preview swatches and synchronized chart themes.
+  3. **Executive Dashboard**: Six real-time KPI metrics, zone occupancy distribution, 14-day collection trend, and recent transaction log.
+  4. **Search & Filtering**: Multi-field query filters with SQLite pushdown and instant filter resets.
+  5. **Monthly Calendar**: Interactive revenue heatmap with day-level drill-down audits.
+- ✅ **Excel Reporting**: Formatted `.xlsx` exports for sessions, daily revenue, and vehicle registry with styled headers and auto-column fitting.
+- ✅ **Automated Testing**: 100% passing pytest suite and Streamlit AppTest smoke tests.
+
+---
+
 ## Screenshots
 
-> Screenshots will be added after Review 2. See `docs/screenshots/`.
+### 1. Executive Dashboard Overview
+![Dashboard Overview](docs/screenshots/dashboard_overview.png)
+
+### 2. Operational Entry & Exit Billing (CTQ 1 & CTQ 3)
+![Entry & Exit Billing](docs/screenshots/entry_exit_billing.png)
+
+### 3. Monthly Calendar Revenue Heatmap (Q03 Feature 5)
+![Calendar Heatmap](docs/screenshots/calendar_heatmap.png)
+
+### 4. Custom Theme Palettes & Dark Mode (Q03 Features 1 & 2)
+![Theme Customizer](docs/screenshots/theme_customizer.png)
 
 ---
 
