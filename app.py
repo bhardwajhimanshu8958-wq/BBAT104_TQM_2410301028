@@ -86,6 +86,7 @@ pages = {
         st.Page("ui_pages/fishbone_page.py", title="Ishikawa Fishbone", icon="🐟"),
         st.Page("ui_pages/pdca_page.py", title="PDCA Improvement Cycles", icon="🔄"),
         st.Page("ui_pages/control_chart_page.py", title="SPC Control Chart", icon="📈"),
+        st.Page("ui_pages/tqm_report_page.py", title="TQM Summary Report", icon="📄"),
     ],
 }
 
