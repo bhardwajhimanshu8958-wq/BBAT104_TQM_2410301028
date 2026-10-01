@@ -1,0 +1,54 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Distribution / packaging
+.Python
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Database (live data — commit schema.sql and seed.py instead)
+parking.db
+*.db
+
+# OS generated files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Pytest cache
+.pytest_cache/
+htmlcov/
+.coverage
+
+# Environment variables
+.env
+*.env
+
+# Generated exports (keep folder with .gitkeep)
+exports/*.xlsx
+exports/*.png
+
+# Logs
+*.log
