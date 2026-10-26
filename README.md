@@ -1,260 +1,145 @@
-# BBAT104_TQM_2410301028 — Parking Management System
+# Autonomous Smart Parking Management System (AS-PMS)
 
-**Course:** BBAT104 Fundamentals of Total Quality Management (TQM), Session 2026-27  
-**Student:** Himanshu Bhardwaj | Roll No. 2410301028 | B.Tech CSE Sec A  
-**Quality Goal:** Q03 — Improve Usability  
-**TQM Goal:** Minimize entry queues and maximize parking space utilization.
+[![FastAPI](https://img.shields.io/badge/Backend-FastAPI_0.115-009688.svg?logo=fastapi)](https://fastapi.tiangolo.com)
+[![Python](https://img.shields.io/badge/Python-3.10%2B-blue.svg?logo=python)](https://python.org)
+[![SQLite](https://img.shields.io/badge/Database-SQLite_WAL-003B57.svg?logo=sqlite)](https://sqlite.org)
+[![TailwindCSS](https://img.shields.io/badge/UI-TailwindCSS_CDN-38B2AC.svg?logo=tailwind-css)](https://tailwindcss.com)
+[![Architecture](https://img.shields.io/badge/Architecture-Decoupled_Client--Server-6366F1.svg)](docs/SYSTEM_ARCHITECTURE.md)
 
----
-
-## Table of Contents
-
-1. [Project Overview](#project-overview)
-2. [Quick Setup](#quick-setup)
-3. [Features](#features)
-4. [Q03 Usability Features](#q03-usability-features)
-5. [Repository Structure](#repository-structure)
-6. [TQM Artefacts](#tqm-artefacts)
-7. [Architecture](#architecture)
-8. [Screenshots](#screenshots)
-9. [Running Tests](#running-tests)
+An enterprise-grade, multi-tiered parking management and automation platform designed for academic viva evaluation and real-world industrial operations. Features strict 3-tier Role-Based Access Control (RBAC), Grokking OOD vehicle-to-stall compatibility rules, atomic pessimistic row-locking to eliminate double-booking, an automated background lifespan reaper daemon, and dynamic multi-floor expansion.
 
 ---
 
-## Project Overview
-
-A complete **Parking Management System** built with Python + Streamlit + SQLite. The system manages parking slots, vehicles, entry/exit, billing and real-time utilization reporting — all with a strong TQM quality framework.
-
-| Item | Detail |
-|------|--------|
-| Stack | Python 3.x, Streamlit, SQLite3, pandas, openpyxl, matplotlib, seaborn, pytest |
-| Storage | SQLite (`parking.db`) — schema in `database/schema.sql` |
-| Tests | pytest + `streamlit.testing.v1.AppTest` |
-| Commits | ≥ 34 commits, linear history, no force-pushes |
-
----
-
-## Quick Setup
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/bhardwajhimanshu8958-wq/BBAT104_TQM_2410301028.git
-cd BBAT104_TQM_2410301028
-
-# 2. Create a virtual environment and install dependencies
-python -m venv .venv
-# Windows
-.venv\Scripts\activate
-# macOS/Linux
-source .venv/bin/activate
-
-pip install -r requirements.txt
-
-# 3. Initialise the database and load demo data
-python database/seed.py
-
-# 4. Launch the app
-streamlit run app.py
-```
-
-> **Note:** Demo seed rows are clearly labelled `is_demo = 1`. Replace them with your own observations before submission.
-
----
-
-## Features
-
-### Baseline Modules
-| Module | Description |
-|--------|-------------|
-| **Slots** | Create, read, update, delete parking slots. Cannot delete occupied slots. |
-| **Vehicles** | Manage vehicle registrations. Plate number enforced unique. |
-| **Entry** | Register vehicle entry; auto-suggests first available matching slot. |
-| **Exit** | Compute fee (free minutes + base + per-hour, rounded up). Free slot on exit. |
-| **Utilization** | Real-time metric: Occupied ÷ Total non-maintenance slots. |
-| **Reports** | Export sessions/revenue/vehicles to formatted `.xlsx`. |
-| **Poka-Yoke** | Input validators: Indian plate regex, 10-digit phone, no double-entry, no exit before entry. |
-
----
-
-## Q03 Usability Features
-
-All five Q03 features are implemented and visible in the UI:
-
-| # | Feature | Description |
-|---|---------|-------------|
-| 1 | **Dark Mode** | Sidebar toggle; CSS injected via `st.markdown`. Persisted in DB. |
-| 2 | **Custom Themes** | 5 palettes (Ocean, Forest, Sunset, Royal, Slate); live preview swatch; applies to charts too. |
-| 3 | **Dashboard Overview** | KPI cards, occupancy chart by zone, revenue-by-day chart, recent activity table. |
-| 4 | **Search Filters** | Filter vehicles/sessions by plate, owner, slot, status, type, date range; clear-filters button. |
-| 5 | **Calendar View** | Month view (Python `calendar` + pandas); heat-coloured revenue cells; day-detail table. |
-
----
-
-## Repository Structure
+## Clean Directory Tree
 
 ```
-BBAT104_TQM_2410301028/
-├── app.py
-├── config.py
-├── requirements.txt
-├── README.md
-├── .gitignore
-├── .streamlit/config.toml
-├── database/
-│   ├── db.py
-│   ├── schema.sql
-│   └── seed.py
-├── modules/
-│   ├── slots.py
-│   ├── vehicles.py
-│   ├── sessions.py
-│   ├── billing.py
-│   ├── validation.py
-│   └── reports.py
-├── features/
-│   ├── theme.py
-│   ├── dashboard.py
-│   ├── search_filters.py
-│   └── calendar_view.py
-├── tqm/
-│   ├── checksheet.py         ← Defect log & quality observations
-│   ├── fmea.py               ← FMEA Risk Audit (12 failure modes, RPN)
-│   ├── pareto.py             ← Pareto 80/20 chart from live defect data
-│   ├── fishbone.py           ← Ishikawa diagram (4-branch, matplotlib)
-│   ├── pdca.py               ← PDCA cycle tracker (3 seeded cycles)
-│   ├── control_chart.py      ← SPC X-bar control chart (UCL/LCL, 3σ)
-│   └── tqm_report.py         ← 6-sheet TQM Excel summary export
-├── ui_pages/
-├── tests/
+parking-management/
+├── backend/
+│   ├── main.py              # FastAPI application gateway, routes, lifespan worker & static mount
+│   ├── models.py            # SQLAlchemy 2.0 ORM schemas, Enums & Grokking OOD compatibility engine
+│   ├── database.py          # SQLite engine config, thread-safe RLock & WAL mode PRAGMAs
+│   ├── auth.py              # Cryptographic BCrypt hashing, JWT generation & RBAC guards
+│   ├── schemas.py           # Pydantic v2 validation models & request/response contracts
+│   ├── requirements.txt     # Locked production dependencies
+│   └── parking_management.db# Relational SQLite database with WAL journals
+├── frontend/
+│   └── index.html           # Unified industrial single-page dashboard with role portals
 ├── docs/
-│   ├── SRS.md
-│   ├── ARCHITECTURE.md
-│   ├── CTQ_TREE.md
-│   ├── SIPOC.md
-│   ├── FMEA.md
-│   ├── ERROR_LOG.md
-│   ├── pareto_chart.png      ← auto-generated by tqm/pareto.py
-│   ├── fishbone_diagram.png  ← auto-generated by tqm/fishbone.py
-│   ├── control_chart.png     ← auto-generated by tqm/control_chart.py
-│   └── screenshots/
-└── exports/                  ← Excel/PNG exports created at runtime
+│   ├── SYSTEM_ARCHITECTURE.md # Full architecture specification, Mermaid diagrams & math models
+│   └── SRS.md                 # IEEE-compliant Software Requirements Specification (FR-1 to FR-5)
+└── README.md                # Project documentation, quickstart & 3-minute viva runbook
 ```
 
 ---
 
-## TQM Artefacts
+## Quickstart Guide
 
-The project implements a complete Total Quality Management framework with full bidirectional traceability:
+### 1. Prerequisites
+- Python 3.10 or higher
+- PowerShell or modern terminal
 
-| Artefact | File | Purpose |
-|----------|------|---------|
-| **SRS** | [docs/SRS.md](docs/SRS.md) | Software Requirements Specification & Traceability Matrix |
-| **Architecture** | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Mermaid flowchart + 4-tier layered architecture |
-| **CTQ Tree** | [docs/CTQ_TREE.md](docs/CTQ_TREE.md) | Critical-to-Quality Need → Driver → Measurable Target tree |
-| **SIPOC** | [docs/SIPOC.md](docs/SIPOC.md) | Macro process matrix (Suppliers, Inputs, Process, Outputs, Customers) |
-| **FMEA** | [docs/FMEA.md](docs/FMEA.md) | Risk audit (12 failure modes, RPN = S×O×D, mitigation plan) |
-| **PDCA Log** | [docs/PDCA_LOG.md](docs/PDCA_LOG.md) | 3 continuous improvement cycles with before & after metrics |
-| **User Manual** | [docs/USER_MANUAL.md](docs/USER_MANUAL.md) | Complete 14-page operational guide & troubleshooting table |
-| **Defect / Error Log** | [docs/ERROR_LOG.md](docs/ERROR_LOG.md) | Real defects found during development & lessons learned |
+### 2. Setup & Execution
+From the root directory, navigate into `backend/`, install requirements, and launch the Uvicorn ASGI server:
 
-### Generated TQM Visualisations
-
-The SQC charts are rendered dynamically using `matplotlib` from live SQLite defect and operational data:
-
-#### 1. Pareto Analysis (80/20 Rule — Vital Few Defect Causes)
-![Pareto Chart](docs/pareto_chart.png)
-
-#### 2. Ishikawa Fishbone (Cause-and-Effect Root Cause Analysis)
-![Fishbone Diagram](docs/fishbone_diagram.png)
-
-#### 3. Statistical Process Control (SPC X-bar Control Chart with 3σ Limits)
-![Control Chart](docs/control_chart.png)
-
----
-
-## Architecture
-
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full Mermaid flowchart and detailed component map.
-
-**Layered Overview:**
-```
-┌─────────────────────────────────────────────┐
-│  UI Layer (Streamlit pages in ui_pages/)    │
-├─────────────────────────────────────────────┤
-│  Feature Layer (features/ + tqm/)           │
-├─────────────────────────────────────────────┤
-│  Business Logic (modules/)                  │
-├─────────────────────────────────────────────┤
-│  Data Layer (database/db.py + SQLite)       │
-└─────────────────────────────────────────────┘
+```powershell
+cd backend
+pip install -r requirements.txt
+python -m uvicorn main:app --reload --port 8000
 ```
 
----
-
-## Review Progress & Milestones
-
-### Review 1: Setup, SRS & Foundations (Commits 1–6)
-- Repository setup, initial architecture, CTQ Tree, and Software Requirements Specification (SRS) completed.
-
-### Review 2: Baseline CRUD & Q03 Usability Suite (Commits 7–22)
-- ✅ **Full CRUD Implementation**: Slots and Vehicle inventory operations with foreign key integrity and occupied bay deletion protection.
-- ✅ **Optimized Entry Flow (CTQ 1)**: Automatic bay recommendation based on vehicle type (Cars/Disabled, Bikes, EVs) to minimize entry queue wait time.
-- ✅ **Accurate Billing (CTQ 3)**: Tariff computation adhering strictly to SRS FR-14 with free grace tiers, base charges, and ceiling rounding for subsequent hours.
-- ✅ **Poka-Yoke Mistake-Proofing**: Indian vehicle registration format verification, 10-digit mobile number validation, double entry prevention, and exit timestamp guards.
-- ✅ **Q03 Usability Suite**:
-  1. **Dark Mode**: High-contrast dark styling dynamically applied via CSS variables.
-  2. **Custom Themes**: Five distinct palettes (Ocean, Forest, Sunset, Royal, Slate) with real-time sidebar preview swatches and synchronized chart themes.
-  3. **Executive Dashboard**: Six real-time KPI metrics, zone occupancy distribution, 14-day collection trend, and recent transaction log.
-  4. **Search & Filtering**: Multi-field query filters with SQLite pushdown and instant filter resets.
-  5. **Monthly Calendar**: Interactive revenue heatmap with day-level drill-down audits.
-- ✅ **Excel Reporting**: Formatted `.xlsx` exports for sessions, daily revenue, and vehicle registry with styled headers and auto-column fitting.
-
-### Review 3 & 4: TQM Quality Tools & Continuous Improvement (Commits 23–32)
-- ✅ **SIPOC Diagram** (`docs/SIPOC.md`): Full 8-row macro matrix covering all parking system processes.
-- ✅ **Defect Checksheet** (`tqm/checksheet.py`): Real-time defect logging with module, fishbone category, severity (1–10), and status tracking. Demo rows pre-seeded.
-- ✅ **FMEA Risk Audit** (`tqm/fmea.py`): 12 failure modes covering all system layers. RPN = S × O × D. 3 failure modes had pre-mitigation RPN > 100 (critical threshold). All resolved.
-- ✅ **Pareto Analysis** (`tqm/pareto.py`): 80/20 dual-axis chart from live defect data. Automatically identifies the vital-few defect categories.
-- ✅ **Ishikawa Fishbone** (`tqm/fishbone.py`): 4-branch matplotlib diagram (People / Process / Software Code / Infrastructure) populated from real defect records.
-- ✅ **PDCA Cycle Tracker** (`tqm/pdca.py`): 3 completed improvement cycles logged (Billing Accuracy, Empty-DB Crash, FK Enforcement). PDCA wheel visualisation + before/after metric comparison.
-- ✅ **SPC Control Chart** (`tqm/control_chart.py`): X-bar chart with 3σ UCL/LCL. Flags out-of-control days in revenue data. 30-day demo revenue seeder included.
-- ✅ **TQM Summary Report** (`tqm/tqm_report.py`): One-click 6-sheet Excel workbook (CTQ Tree, SIPOC, Defect Log, FMEA, PDCA, Control Chart Data) for final submission.
-
-### Review 5 / Final Release: v1.0 Production Readiness (Commits 33–34)
-- ✅ **Complete User Manual** (`docs/USER_MANUAL.md`): Detailed 14-page guide covering all pages, system workflows, and troubleshooting.
-- ✅ **Full Defect & Error Log** (`docs/ERROR_LOG.md`): All bugs, root causes, fixes, and prevention mechanisms cataloged.
-- ✅ **Automated Quality Gates**: 100% test pass rate across `pytest` unit suites and `Streamlit` smoke tests.
+Once launched, access the application in your browser:
+- **Interactive Web Portal**: [http://127.0.0.1:8000/](http://127.0.0.1:8000/)
+- **Interactive OpenAPI Docs**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+- **Alternative ReDoc**: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
 
 ---
 
-## Screenshots
+## Default Credentials
 
-### 1. Executive Dashboard Overview
-![Dashboard Overview](docs/screenshots/dashboard_overview.png)
+The platform initializes with pre-seeded accounts configured for seamless testing across all three operational tiers:
 
-### 2. Operational Entry & Exit Billing (CTQ 1 & CTQ 3)
-![Entry & Exit Billing](docs/screenshots/entry_exit_billing.png)
-
-### 3. Monthly Calendar Revenue Heatmap (Q03 Feature 5)
-![Calendar Heatmap](docs/screenshots/calendar_heatmap.png)
-
-### 4. Custom Theme Palettes & Dark Mode (Q03 Features 1 & 2)
-![Theme Customizer](docs/screenshots/theme_customizer.png)
+| Role Tier | Username | Password | Operational Capabilities |
+|:---|:---|:---|:---|
+| **Chief Administrator** | `admin1` | `admin123` | System tariffs, live revenue stats, floor/stall master, dynamic expansion, and immutable audit logs. |
+| **Gate Attendant / Operator** | `gateman1` | `gate123` | 1-Click pending booking intake, optical ticket dispenser, barrier servo telemetry, and POS checkout terminal. |
+| **Registered Customer** | `driver1` | `driver123` | Live multi-floor stall availability, advance reservation engine, optical digital gate passes, and online UPI settlement. |
 
 ---
 
-## Running Tests & Quality Gates
+## Key Engineering Features
 
-Run the test suite using pytest:
-```bash
-pytest -q
+1. **Grokking OOD Vehicle Compatibility**:
+   - `MOTORBIKE` $\to$ `MOTORBIKE`, `COMPACT`, `LARGE`
+   - `CAR` $\to$ `COMPACT`, `LARGE`
+   - `VAN` / `TRUCK` $\to$ `LARGE` strictly
+   - `ELECTRIC` $\to$ `ELECTRIC`, `COMPACT`, `LARGE`
+   - Strict size checking rejects mismatches (e.g., CAR into MOTORBIKE stall) with `HTTP 400 Bad Request`.
+
+2. **Concurrency & Double-Booking Elimination**:
+   - Uses SQLite in Write-Ahead Logging (`WAL`) mode with `busy_timeout=5000`.
+   - Combines Python re-entrant locks (`threading.RLock`) with SQLAlchemy `with_for_update()` pessimistic row locks.
+   - Guaranteed: when two requests race for the same stall in the same millisecond, the 1st request wins (`200 OK`) and the 2nd request receives `HTTP 409 Conflict`.
+
+3. **Background Lifespan Reaper Daemon**:
+   - Runs continuously via FastAPI's `lifespan` context manager.
+   - Sweeps every 60 seconds. Reclaims unfulfilled reservations after 15 minutes of inactivity back to `AVAILABLE`.
+   - Expired passes are barred at the gate with `HTTP 400 Bad Request` and barrier locked.
+
+4. **1-Click Operator Inbound Flow**:
+   - The gate terminal displays a real-time "Pending Bookings" quick-select list of all active `RESERVED` tickets.
+   - Clicking any pending badge auto-populates the vehicle license plate, ticket ID, and category instantly.
+
+5. **Accurate Tiered Tariff & Overstay Engine**:
+   - Immediate Exit Grace Period: $\le 2$ minutes AND no overstay $\to$ ₹0.00.
+   - Progressive tiers: 1st hour ₹50, 2nd-3rd hour ₹30/hr, 4th+ hour ₹20/hr.
+   - Overstay Multiplier: Excess hours past booked end window incur a statutory $1.5\times$ penalty multiplier.
+   - Non-Conflicting Settlement: Pre-paid tickets display `✓ DIGITAL PASS SETTLED (₹[amount]) — EXIT CLEARED` and scan at exit with `Net Due: ₹0.00`. Subsequent duplicate payments return `HTTP 400`.
+
+---
+
+## Step-by-Step 3-Minute Viva Presentation Runbook
+
+Follow this precise sequence during viva examination or academic project demonstration:
+
+```
+[00:00 - 00:45] Login & Architectural Overview
+  1. Open http://127.0.0.1:8000/ -> Display industrial login screen.
+  2. Log in as 'admin1' / 'admin123'.
+  3. Show Chief Administrator dashboard: Live Floor Gauges, Dynamic Floor Expansion (P1, P2, P3), System Tariffs, and immutable Financial Audit Trail.
+  4. Explain Decoupled Client-Server architecture and SQLite WAL mode (refer to docs/SYSTEM_ARCHITECTURE.md).
+
+[00:45 - 01:30] Customer Pre-Booking & Grokking OOD Rules
+  1. Log out, then log in as 'driver1' / 'driver123'.
+  2. Show live multi-floor occupancy map.
+  3. Select Floor 1 -> Click an available COMPACT stall (e.g. P1-C01) -> Reserve for vehicle 'KA-01-VIVA-01' (CAR).
+  4. Show generated Active Digital Gate Pass with optical code.
+
+[01:30 - 02:15] 1-Click Gate Operator Intake & Vehicle Compatibility
+  1. Log out, then log in as 'gateman1' / 'gate123'.
+  2. In the Gate Inbound Terminal, show the 'Pending Bookings' quick-select drawer.
+  3. Click the badge for 'KA-01-VIVA-01' -> Inputs and vehicle type auto-populate with 1 click!
+  4. Click 'Issue Ticket & Raise Inbound Barrier' -> Barrier servo opens (Green), stall transitions to PARKED (Red).
+  5. Demonstrate OOD Rejection: Attempt to check in a CAR into a MOTORBIKE stall -> Observe instant red toast and HTTP 400 "Size Mismatch: Vehicle cannot fit in this stall."
+
+[02:15 - 03:00] Mobile UPI Pre-Payment & Exit Gate Settlement
+  1. Switch back to Customer portal or demonstrate live in POS Outbound Exit.
+  2. In Customer portal, click 'Pay Online via UPI / Card' -> Observe green receipt banner:
+     "✓ DIGITAL PASS SETTLED (₹[amount]) — EXIT CLEARED".
+  3. Switch to Operator Outbound Exit -> Scan ticket -> System displays:
+     "PAYMENT VERIFIED: Settled Online via UPI. Net Due: ₹0.00" -> Exit barrier raises!
+  4. Open 'Supervisor Diagnostics & Edge-Case Console' at screen bottom:
+     - Run 'Multi-Vehicle Concurrency Stress Test' -> First vehicle gets 200 OK, second gets 409 Conflict!
+     - Run 'Simulate Overstay' -> Demonstrates itemized 1.5x penalty multiplier.
 ```
 
-Tests cover:
-- Slot CRUD operations and occupied-deletion prevention
-- Vehicle registration and unique plate constraints
-- Automatic slot suggestion and allocation
-- Exit processing and tariff billing mathematics (including grace tier calculation)
-- Poka-Yoke input validators (Indian license plates, phone numbers, state transitions)
-- TQM module imports, checksheet logging, and data integrity
-- Streamlit page smoke tests using `streamlit.testing.v1.AppTest`
+---
 
+## Technology Stack Summary
+
+- **Backend Framework**: [FastAPI](https://fastapi.tiangolo.com)
+- **ASGI Server**: [Uvicorn](https://www.uvicorn.org)
+- **ORM & Data Layer**: [SQLAlchemy 2.0](https://www.sqlalchemy.org)
+- **Concurrency & WAL**: SQLite 3 with Write-Ahead Logging & thread-safe re-entrant mutexes
+- **Authentication**: Stateless JSON Web Tokens (`PyJWT`) with salted BCrypt password encryption
+- **Frontend Layer**: Semantic HTML5, Vanilla JavaScript (ES6+), Tailwind CSS CDN, FontAwesome 6 Icons
+- **Documentation**: IEEE 830-compliant SRS (`docs/SRS.md`) and Technical Architecture (`docs/SYSTEM_ARCHITECTURE.md`)

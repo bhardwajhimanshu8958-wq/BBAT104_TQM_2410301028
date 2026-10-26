@@ -1,190 +1,109 @@
 # Software Requirements Specification (SRS)
-
-**Project:** Parking Management System  
-**Course:** BBAT104 — Fundamentals of Total Quality Management  
-**Student:** Himanshu Bhardwaj | Roll No. 2410301028  
-**Version:** 1.0 | Date: 2026-10-01  
+## Autonomous Smart Parking Management System (AS-PMS)
 
 ---
 
-## 1. Introduction
+### 1. Introduction
 
-### 1.1 Purpose
-This document specifies the functional and non-functional requirements of the **Parking Management System** developed as part of BBAT104 TQM Session 2026-27. It serves as the contract between the developer and the course evaluator, and as the baseline for test design and TQM traceability.
+#### 1.1 Purpose
+This Software Requirements Specification (SRS) document details the functional and non-functional requirements for the Autonomous Smart Parking Management System (AS-PMS). Designed for high-density multi-floor parking infrastructures, the system provides automated stall allocation, OOD-compliant vehicle size enforcement, pessimistic concurrency governance, real-time POS toll settlements, and automated lifecycle reclamation.
 
-### 1.2 Scope
-The system is a desktop-grade web application built with Python and Streamlit. It manages parking slots, vehicle registrations, entry/exit sessions, billing, and generates TQM quality charts. It is deployed locally and requires no internet access beyond the initial `pip install`.
-
-### 1.3 Definitions and Acronyms
-
-| Term | Definition |
-|------|------------|
-| CRUD | Create, Read, Update, Delete |
-| CTQ | Critical-to-Quality |
-| FMEA | Failure Mode and Effects Analysis |
-| PDCA | Plan-Do-Check-Act |
-| Poka-Yoke | Mistake-proofing technique (Japanese) |
-| RPN | Risk Priority Number = Severity × Occurrence × Detection |
-| SQC | Statistical Quality Control |
-| TQM | Total Quality Management |
-| Utilization | Occupied slots ÷ Total non-maintenance slots × 100% |
+#### 1.2 Scope
+The scope of AS-PMS encompasses:
+- Decoupled RESTful API Gateway delivering sub-100ms request/response cycles.
+- Multi-floor stall management with dynamic level expansion (P1, P2, P3).
+- Strict 3-tier Role-Based Access Control (Admin, Gate Operator, Customer).
+- Grokking Object-Oriented Design (OOD) vehicle-to-stall compatibility matrix.
+- Lifespan background reaper worker executing automated no-show reclamation.
+- Digital self-service mobile pass clearance and Point of Sale (POS) exit gate settlement.
 
 ---
 
-## 2. Overall Description
+### 2. Overall Description
 
-### 2.1 Product Perspective
-The system is a standalone application that replaces manual parking registers. It persists all data in an SQLite database and produces Excel reports and quality charts.
+#### 2.1 System Environment & Architecture
+AS-PMS operates as an asynchronous, single-server multi-tiered application. The backend is written in Python (FastAPI, SQLAlchemy, SQLite WAL), communicating over JSON/REST with a single-page web application (HTML5, ES6+, Tailwind CSS).
 
-### 2.2 User Classes
-
-| Class | Description |
-|-------|-------------|
-| Parking Operator | Primary user: manages slots, vehicles, entry/exit, billing, and views TQM charts |
-| Administrator | Same as operator for this single-user system |
-| Course Evaluator | Read-only reviewer assessing the GitHub repository and documentation |
-
-### 2.3 Operating Environment
-- OS: Windows / macOS / Linux  
-- Python: 3.10+  
-- Browser: Any modern browser (Streamlit renders the UI)  
-- Storage: SQLite file (`parking.db`) on local disk  
-
-### 2.4 Assumptions and Constraints
-- **AC-1:** The system will be operated by a single user at a time.
-- **AC-2:** All monetary values are in Indian Rupees (₹).
-- **AC-3:** Vehicle plates follow Indian format (e.g., `UK07AB1234`).
-- **AC-4:** The system does not integrate with physical hardware (barriers, sensors).
-- **AC-5:** Time is measured in hours; fractional hours are rounded up for billing.
+#### 2.2 User Classes and Roles
+- **Chief Administrator (`ADMIN`)**: Oversees facility master data, configures hourly tariffs and overstay penalties, toggles stall maintenance states, commissions new floors/stalls, and audits financial logs.
+- **Gate Attendant / Operator (`OPERATOR`)**: Manages physical ingress and egress gates, processes 1-click check-ins for pre-reserved vehicles, dispenses active tickets, scans digital passes, and executes physical POS payments.
+- **Registered Customer / Driver (`CUSTOMER`)**: Inspects live floor occupancy, executes atomic reservations, tracks digital gate passes, and settles parking fees online via simulated UPI/Card.
 
 ---
 
-## 3. Functional Requirements
+### 3. Functional Requirements (FR)
 
-### 3.1 Slot Management
+```mermaid
+graph LR
+    subgraph Functional Requirements Overview
+        FR1["FR-1: Authentication & RBAC Guard"]
+        FR2["FR-2: Grokking OOD Vehicle Compatibility"]
+        FR3["FR-3: Reservation & Lifecycle State Machine"]
+        FR4["FR-4: POS Settlement & Overstay Tariffs"]
+        FR5["FR-5: Facility Maintenance & Floor Expansion"]
+    end
+```
 
-| ID | Requirement | Priority |
-|----|-------------|----------|
-| FR-01 | The system shall allow the operator to create a parking slot with attributes: slot code, zone, slot type (Car/Bike/EV/Disabled), and status. | High |
-| FR-02 | Slot codes shall be unique; the system shall reject duplicates. | High |
-| FR-03 | The system shall allow updating slot details and status. | High |
-| FR-04 | The system shall allow deleting a slot only if its status is NOT 'Occupied'. | High |
-| FR-05 | The system shall display all slots with filters by zone, type, and status. | Medium |
+#### FR-1: Authentication & Cryptographic Role-Based Access Control
+- **FR-1.1**: The system shall authenticate users via `POST /api/auth/login` using username and BCrypt-hashed passwords (`bcrypt.gensalt()`).
+- **FR-1.2**: Upon successful credential verification, the system shall issue a signed JSON Web Token (JWT) using `HS256` encoding containing `sub` (username), `role` (ADMIN, OPERATOR, or CUSTOMER), and an 8-hour expiration timestamp.
+- **FR-1.3**: The API Gateway shall intercept all secured endpoints via `require_role([...])` dependency injection. Unauthorized role access shall immediately abort with `HTTP 403 Forbidden`. Missing or invalid tokens shall abort with `HTTP 401 Unauthorized`.
+- **FR-1.4**: Passwords shall never be stored in plain text. Default administrative and operator accounts shall be seeded automatically during application lifespan startup if missing.
 
-### 3.2 Vehicle Management
+#### FR-2: Grokking OOD Vehicle-to-Stall Compatibility Enforcement
+- **FR-2.1**: The system shall categorize vehicles into five standard types: `MOTORBIKE`, `CAR`, `VAN`, `TRUCK`, and `ELECTRIC`.
+- **FR-2.2**: The system shall categorize parking stalls into four physical dimensions: `MOTORBIKE`, `COMPACT`, `LARGE`, and `ELECTRIC`.
+- **FR-2.3**: Compatibility rules adhering strictly to Grokking Reference Object-Oriented Design shall be enforced across booking and check-in:
+  - `MOTORBIKE` may occupy `MOTORBIKE`, `COMPACT`, or `LARGE` stalls.
+  - `CAR` may occupy `COMPACT` or `LARGE` stalls.
+  - `VAN` may occupy `LARGE` stalls strictly.
+  - `TRUCK` may occupy `LARGE` stalls strictly.
+  - `ELECTRIC` may occupy `ELECTRIC`, `COMPACT`, or `LARGE` stalls.
+- **FR-2.4**: Any attempt to place a vehicle in an incompatible stall (e.g., `CAR` into a `MOTORBIKE` stall, or `TRUCK` into a `COMPACT` stall) shall be rejected with `HTTP 400 Bad Request`: `"Size Mismatch: Vehicle cannot fit in this stall."`
+- **FR-2.5**: Automated stall allocation (`AUTO-ASSIGN`) shall filter available spots dynamically, returning the nearest compatible stall to the ingress gate.
 
-| ID | Requirement | Priority |
-|----|-------------|----------|
-| FR-06 | The system shall allow registering a vehicle with plate number, owner name, phone, and vehicle type. | High |
-| FR-07 | Plate numbers shall be unique; the system shall reject duplicate registrations. | High |
-| FR-08 | The system shall allow updating and deleting vehicle records. | Medium |
-| FR-09 | Plate numbers shall match the Indian vehicle plate regex pattern. | High |
+#### FR-3: Reservation Lifecycle & Background Reaper Daemon
+- **FR-3.1**: Customers may reserve an available stall for a specified 2-hour window. The system shall atomically transition stall status from `AVAILABLE` to `RESERVED`.
+- **FR-3.2**: A background asynchronous task (`reservation_reaper_daemon`) shall execute every 60 seconds.
+- **FR-3.3**: If a vehicle fails to check in at the inbound gate within 15 minutes of reservation issuance (`issued_at`), the ticket status shall transition to `EXPIRED`, and the stall shall be reclaimed back to `AVAILABLE`.
+- **FR-3.4**: If a driver presents an expired ticket at the inbound gate, the gate controller shall reject entry with `HTTP 400 Bad Request`: `"Entry Denied: Reservation has EXPIRED due to no-show."` The barrier gate shall remain locked down.
+- **FR-3.5**: The Operator Inbound terminal shall render a real-time "Pending Bookings" quick-select list of all unfulfilled `RESERVED` tickets. Clicking a pending vehicle card shall automatically populate the check-in input and vehicle type.
 
-### 3.3 Entry Management
+#### FR-4: Billing Calculation, Overstay Penalties, and POS Settlements
+- **FR-4.1**: All datetime comparisons for billing shall be evaluated in timezone-aware UTC (`datetime.now(timezone.utc)`).
+- **FR-4.2**: **Immediate Exit Grace Period**: If duration is $\le 2$ minutes AND no overstay past the reserved window occurred, total amount due shall be ₹0.00.
+- **FR-4.3**: **Standard Tier Rates**: Durations exceeding 2 minutes shall be billed at hourly progressive rates:
+  - Hour 1: Base first-hour rate (₹50.00)
+  - Hours 2 and 3: Second/third-hour rate (₹30.00/hr)
+  - Hours 4+: Remaining-hour rate (₹20.00/hr)
+- **FR-4.4**: **Overstay Penalty Multiplier**: If actual exit time exceeds `booked_end`, excess hours shall incur a statutory $1.5\times$ penalty multiplier:
+  $$\text{Overstay Fee} = \lceil\text{Excess Hours}\rceil \times \text{Remaining Hourly Rate} \times 1.5$$
+- **FR-4.5**: **Non-Conflicting Digital Pass Settlement**:
+  - Customers may settle active parking tickets online via UPI/Card. The ticket transitions to `PAID`, sets `is_prepaid = True`, and grants a 15-minute exit window.
+  - If a ticket is already `PAID`, subsequent calls to `/api/customer/pay` shall return `HTTP 400 Bad Request`: `"Ticket already settled."`
+  - When scanning a pre-paid ticket at the exit booth, the POS terminal shall verify prior settlement and display: `"PAYMENT VERIFIED: Settled Online via UPI. Net Due: ₹0.00"`.
+  - In `frontend/index.html`, settled tickets shall display the green receipt banner: `"✓ DIGITAL PASS SETTLED (₹[amount]) — EXIT CLEARED"`.
+- **FR-4.6**: **Lost Ticket Override**: Customers who lose their physical or digital pass shall be billed a flat penalty fee of ₹500.00.
 
-| ID | Requirement | Priority |
-|----|-------------|----------|
-| FR-10 | The system shall register a vehicle's entry by selecting vehicle and auto-suggesting the first available slot of the matching type. | High |
-| FR-11 | On entry, the selected slot status shall change to 'Occupied' and an active session record shall be created with the current timestamp. | High |
-| FR-12 | The system shall prevent entry of a vehicle that already has an active session. | High |
-
-### 3.4 Exit Management
-
-| ID | Requirement | Priority |
-|----|-------------|----------|
-| FR-13 | The system shall register a vehicle's exit by selecting the active session. | High |
-| FR-14 | On exit, the system shall compute the fee: if duration ≤ free minutes, fee = base rate; otherwise fee = base rate + ⌈(duration − free minutes) / 60⌉ × per-hour rate. | High |
-| FR-15 | On exit, the session status shall be set to 'Completed', the exit time recorded, fee stored, and the slot freed (status = 'Available'). | High |
-| FR-16 | The system shall prevent recording an exit time earlier than the entry time. | High |
-
-### 3.5 Billing and Tariff
-
-| ID | Requirement | Priority |
-|----|-------------|----------|
-| FR-17 | The system shall maintain a tariff table with base rate, per-hour rate, and free minutes per vehicle type. | High |
-| FR-18 | Fee calculation shall use only the tariff stored in the database; hardcoded rates are not allowed. | High |
-
-### 3.6 Reporting
-
-| ID | Requirement | Priority |
-|----|-------------|----------|
-| FR-19 | The system shall export session, revenue, and vehicle reports to `.xlsx` with header formatting and auto column widths. | Medium |
-| FR-20 | The system shall display a real-time utilization metric on the dashboard. | High |
-
-### 3.7 Q03 Usability Features
-
-| ID | Requirement | Feature |
-|----|-------------|---------|
-| FR-21 | The system shall provide a Dark Mode toggle in the sidebar that applies CSS variables to all UI elements and persists the choice across sessions. | Q03-1 |
-| FR-22 | The system shall provide at least 5 colour palettes selectable from a dropdown with a live swatch preview, applicable to both the app and charts. | Q03-2 |
-| FR-23 | The system shall display a Dashboard with KPI cards, occupancy chart by zone, revenue-by-day chart, and a recent activity table. | Q03-3 |
-| FR-24 | The system shall provide Search Filters for vehicles and sessions (plate, owner, slot, status, type, date range) with a clear-filters button and result count. | Q03-4 |
-| FR-25 | The system shall display a Calendar View with heat-coloured daily revenue cells, month navigation, and a day-detail table. | Q03-5 |
-
-### 3.8 TQM Modules
-
-| ID | Requirement | Priority |
-|----|-------------|----------|
-| FR-26 | The system shall provide a Checksheet page to log defects and update their status. | High |
-| FR-27 | The system shall provide an FMEA matrix with automatic RPN, sortable by highest RPN, with Excel export. | High |
-| FR-28 | The system shall generate a Pareto chart from the defects table (bars by type, cumulative line, 80% reference). | High |
-| FR-29 | The system shall generate a Fishbone (Ishikawa) diagram from defects grouped by four categories. | High |
-| FR-30 | The system shall provide a PDCA log page to record cycle details and display a before-vs-after metric chart. | High |
+#### FR-5: Multi-Floor Capacity Expansion & Maintenance Management
+- **FR-5.1**: Administrators shall be capable of creating parking stalls on Floor 1 (P1 Ground), Floor 2 (P2 Level 2), and Floor 3 (P3 Level 3).
+- **FR-5.2**: If an Administrator adds a stall to a floor number that does not yet exist in `parking_floors`, the system shall dynamically create that floor record on the fly without raising foreign key constraint violations.
+- **FR-5.3**: Administrators can toggle any stall between operational and maintenance mode via `PATCH /api/admin/spots/{spot_id}/status`. Maintenance stalls (`MAINTENANCE`) are rendered in gray as `"OUT OF SERVICE"` and are excluded from public reservation and auto-assignment.
 
 ---
 
-## 4. Non-Functional Requirements
+### 4. Non-Functional Requirements (NFR)
 
-| ID | Category | Requirement |
-|----|----------|-------------|
-| NFR-01 | Usability | All error messages shall be user-friendly (no raw Python tracebacks). |
-| NFR-02 | Usability | Entry processing (slot suggestion + session creation) shall complete in under 5 seconds on a local machine. |
-| NFR-03 | Reliability | The system shall handle invalid inputs without crashing (Poka-Yoke validators). |
-| NFR-04 | Reliability | Database constraints (UNIQUE, CHECK, FK) shall prevent invalid states. |
-| NFR-05 | Maintainability | Every function shall have a short docstring. No hardcoded absolute paths. |
-| NFR-06 | Testability | All business-logic functions shall be testable with pytest without launching the Streamlit UI. |
-| NFR-07 | Performance | The dashboard shall load within 3 seconds with up to 1,000 session records. |
-| NFR-08 | Portability | The system shall run on Windows, macOS, and Linux with only `pip install -r requirements.txt`. |
-| NFR-09 | Security | The live database file (`parking.db`) shall not be committed to Git. |
-| NFR-10 | Integrity | Demo seed rows shall be flagged with `is_demo = 1` and labelled 'DEMO' in the UI. |
+#### NFR-1: High Concurrency, Pessimistic Locking & ACID Compliance
+- **NFR-1.1**: The database shall operate in SQLite Write-Ahead Logging (`WAL`) mode with `synchronous=NORMAL` and `busy_timeout=5000` to eliminate database locked errors during multi-threaded requests.
+- **NFR-1.2**: Critical allocation routes (`/api/customer/reserve` and `/api/operator/check-in`) shall serialize access using `with db_write_lock` combined with SQLAlchemy `with_for_update()`.
+- **NFR-1.3**: When two or more concurrent requests attempt to reserve the exact same parking stall in the same millisecond, exactly one request shall succeed with `HTTP 200 OK`, while all other competing requests shall be cleanly rejected with `HTTP 409 Conflict`. Zero double-bookings shall occur under any load.
 
----
+#### NFR-2: Sub-100ms Response Latency
+- **NFR-2.1**: All core transactional endpoints (`/api/auth/login`, `/api/floors`, `/api/customer/reserve`, `/api/operator/check-in`, `/api/operator/scan-fee`) shall complete execution in under 100 milliseconds under nominal local load.
+- **NFR-2.2**: The single-page frontend application shall load all assets from local static mounts in under 200 milliseconds without external blocking script dependencies.
 
-## 5. Use-Case List
-
-| Use Case | Actor | Description |
-|----------|-------|-------------|
-| UC-01 | Operator | Add a new parking slot |
-| UC-02 | Operator | Register a new vehicle |
-| UC-03 | Operator | Record vehicle entry and allocate slot |
-| UC-04 | Operator | Record vehicle exit and compute fee |
-| UC-05 | Operator | View and export session/revenue report |
-| UC-06 | Operator | Switch dark/light mode |
-| UC-07 | Operator | Select a colour theme |
-| UC-08 | Operator | View Dashboard KPIs and charts |
-| UC-09 | Operator | Search and filter sessions/vehicles |
-| UC-10 | Operator | Navigate calendar and view daily entries |
-| UC-11 | Operator | Log a defect in the Checksheet |
-| UC-12 | Operator | View/edit FMEA matrix |
-| UC-13 | Operator | Generate Pareto chart |
-| UC-14 | Operator | Generate Fishbone diagram |
-| UC-15 | Operator | Record a PDCA cycle |
-
----
-
-## 6. Traceability Matrix
-
-| Requirement | Module / File | Test |
-|-------------|---------------|------|
-| FR-01 to FR-05 | `modules/slots.py`, `ui_pages/pg_slots.py` | `tests/test_slots.py` |
-| FR-06 to FR-09 | `modules/vehicles.py`, `ui_pages/pg_vehicles.py` | `tests/test_vehicles.py` |
-| FR-10 to FR-12 | `modules/sessions.py`, `ui_pages/pg_entry.py` | `tests/test_sessions.py` |
-| FR-13 to FR-16 | `modules/sessions.py`, `ui_pages/pg_exit.py` | `tests/test_sessions.py` |
-| FR-17 to FR-18 | `modules/billing.py`, `config.py` | `tests/test_billing.py` |
-| FR-19 to FR-20 | `modules/reports.py`, `features/dashboard.py` | `tests/test_reports.py` |
-| FR-21 to FR-22 | `features/theme.py` | `tests/test_app_smoke.py` |
-| FR-23 | `features/dashboard.py`, `ui_pages/pg_dashboard.py` | `tests/test_app_smoke.py` |
-| FR-24 | `features/search_filters.py` | `tests/test_app_smoke.py` |
-| FR-25 | `features/calendar_view.py` | `tests/test_app_smoke.py` |
-| FR-26 to FR-30 | `tqm/*.py` | `tests/test_tqm.py` |
-| NFR-01, NFR-03 | `modules/validation.py` | `tests/test_validation.py` |
+#### NFR-3: Data Integrity & Immutable Audit Trail
+- **NFR-3.1**: Every security-sensitive or financial event (user registration, stall creation, reservation, check-in, overstay simulation, online payment, booth checkout, and reaper sweeps) shall append an immutable record to the `audit_logs` table.
+- **NFR-3.2**: Audit records shall capture timestamp (UTC), actor username, actor role, action identifier, IP address, and itemized transaction details.
+- **NFR-3.3**: Foreign keys linking stalls to floors, tickets to stalls, and payments to tickets shall enforce relational integrity, preventing orphaned records.
